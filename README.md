@@ -131,3 +131,30 @@ The global QGIS and open-source community.
 📘 IMDLIB Documentation
 
 💻 QGIS Python Plugin Developer Guide
+
+
+## 🔧 IMD Download Reliability Fix
+
+This fork contains a reliability fix for multi-year IMD 0.25° gridded rainfall downloads through imdlib.
+
+The IMD downloader now:
+
+- downloads data one year at a time instead of requesting the complete multi-year range in one operation;
+- reuses valid yearly files already present in the local IMD data directory;
+- retries transient IMD/network failures up to three times with increasing delays;
+- continues with the remaining years when an individual year remains unavailable;
+- preserves the successfully retrieved years instead of failing the entire rainfall run.
+
+This behavior was validated against intermittent responses from imdpune.gov.in, where individual years could fail on the first request but succeed on a later retry.
+
+### Corrected plugin package
+
+The GitHub Actions workflow on the fix/imd-download-reliability branch builds:
+
+Rain2Flood_IMD_Reliability_Fix.zip
+
+The package is generated from the original plugin ZIP with the corrected rainfall_data_sources.py substituted into the plugin.
+
+### Upstream contribution
+
+This change is maintained here as a fork while an upstream contribution is prepared for the original Rain2Flood project.
