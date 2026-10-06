@@ -17,6 +17,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Download Rain2Flood v3 source package
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            "https://github.com/rahulpandey696/Rain2Flood/releases/download/Rain2floodv3/Rain2Floodv3.zip" \
+            -o Rain2Floodv3_upstream.zip
+
       - name: Patch plugin ZIP
         shell: bash
         run: |
@@ -25,12 +33,14 @@ jobs:
           rm -rf build
           mkdir -p build
 
-          unzip -q Rain2Flood_v1.1.zip -d build
+          unzip -q Rain2Floodv3_upstream.zip -d build
 
           TARGET="$(find build -type f -name 'rainfall_data_sources.py' | head -n 1)"
 
           if [ -z "$TARGET" ]; then
-            echo "rainfall_data_sources.py was not found inside the plugin package."
+            echo "rainfall_data_sources.py was not found inside Rain2Flood v3."
+            echo "Package contents:"
+            find build -maxdepth 3 -type f | sort
             exit 1
           fi
 
