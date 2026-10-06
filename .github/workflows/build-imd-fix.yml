@@ -1,0 +1,73 @@
+name: Build corrected Rain2Flood package
+
+on:
+  push:
+    branches:
+      - fix/imd-download-reliability
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-package:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Rain2Flood v3 source package
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -L --fail --retry 3 \
+            "https://github.com/rahulpandey696/Rain2Flood/releases/download/Rain2floodv3/Rain2Floodv3.zip" \
+            -o Rain2Floodv3_upstream.zip
+
+      - name: Patch plugin ZIP
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          rm -rf build
+          mkdir -p build
+
+          unzip -q Rain2Floodv3_upstream.zip -d build
+
+          TARGET="$(find build -type f -name 'rainfall_data_sources.py' | head -n 1)"
+
+          if [ -z "$TARGET" ]; then
+            echo "rainfall_data_sources.py was not found inside Rain2Flood v3."
+            echo "Package contents:"
+            find build -maxdepth 3 -type f | sort
+            exit 1
+          fi
+
+          cp rainfall_data_sources.py "$TARGET"
+
+          rm -f Rain2Flood_IMD_Reliability_Fix.zip
+          cd build
+          zip -qr ../Rain2Flood_IMD_Reliability_Fix.zip .
+          cd ..
+
+          echo "Built corrected package:"
+          ls -lh Rain2Flood_IMD_Reliability_Fix.zip
+
+      - name: Commit corrected package
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add Rain2Flood_IMD_Reliability_Fix.zip
+
+          if git diff --cached --quiet; then
+            echo "No package changes to commit."
+            exit 0
+          fi
+
+          git commit -m "build: publish corrected IMD package"
+          git push
